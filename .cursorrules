@@ -1,0 +1,110 @@
+# Project Structure
+```
+.
+├── 01_network/          # ネットワーク関連のTerraformコード
+│   ├── vpc/            # VPCの設定ファイル
+│   └── env/            # 環境別の設定
+│       └── stg/        # ステージング環境の設定
+│
+├── 02_ec2/             # EC2インスタンス関連のTerraformコード
+│
+├── terraform-backend/   # Terraformのバックエンド設定
+│
+├── .vscode/            # VSCode設定ファイル
+│
+└── .terraform/         # Terraformの一時ファイル *[ignore]* 
+```
+
+# Terraform Rules and Best Practices
+
+## File Structure
+- 各モジュールには以下のファイルを含める:
+  - `main.tf`: リソース定義
+  - `variables.tf`: 変数定義
+  - `outputs.tf`: 出力値定義
+  - `versions.tf`: プロバイダーとバージョン定義
+  - `locals.tf`: ローカル変数定義（必要な場合）
+
+## Naming Conventions
+- リソース名: スネークケース (`example_resource`)
+- 変数名: スネークケース (`vpc_cidr`)
+- タグ: キャメルケース (`Environment`, `Name`)
+- ファイル名: スネークケース (`main.tf`, `vpc_config.tf`)
+
+## Code Style
+- インデントは2スペース
+- リソースブロックは論理的にグループ化
+- コメントは必要な箇所に適切に追加
+- 各リソースには最低限以下のタグを付与:
+  - `Name`
+  - `Environment`
+  - `ManagedBy: Terraform`
+
+## Tag Rules
+- 必須タグ:
+  - `Name`: リソースの一意な識別子
+  - `Environment`: 環境名 (`Dev`, `Stg`, `Prod`)
+  - `ManagedBy`: 管理ツール名 (`Terraform`)
+- 推奨タグ:
+  - `Description`: リソースの説明
+- タグの命名規則:
+  - キー: キャメルケース
+  - 値: 一貫性のある形式を使用
+- タグの実装:
+  ```hcl
+  locals {
+    common_tags = {
+      Environment  = var.environment
+      Project     = var.project_name
+      ManagedBy   = "Terraform"
+      Owner       = var.owner
+      CostCenter  = var.cost_center
+    }
+  }
+  ```
+
+## Security
+- シークレット情報は直接コードに記述しない
+- AWS Secrets ManagerまたはSSMパラメータストアを使用
+- セキュリティグループは最小権限の原則に従う
+
+## State Management
+- リモートステートを使用 (S3)
+- ステートファイルはワークスペース/環境ごとに分離
+- ステートのバックアップを有効化
+
+## Module Structure
+- 再利用可能なモジュールは汎用的に設計
+- モジュールは単一責任の原則に従う
+- 必須パラメータは適切なバリデーションを実装
+
+## Version Control
+- `.terraform/` ディレクトリは.gitignoreに含める
+- `*.tfstate` ファイルはバージョン管理対象外
+- `*.tfvars` ファイルは機密情報を含む場合は管理対象外 
+
+## Commit Rules
+- コミットメッセージは以下の形式に従う:
+  ```
+  <type>(<scope>): <description>
+
+  [optional body]
+  ```
+- type は以下のいずれかを使用:
+  - `feat`: 新機能
+  - `fix`: バグ修正
+  - `refactor`: リファクタリング
+  - `docs`: ドキュメントのみの変更
+  - `style`: コードの意味に影響しない変更（空白、フォーマット等）
+  - `test`: テストコードの追加・修正
+  - `chore`: ビルドプロセスやツールの変更
+- scope はオプションで、変更が影響する範囲を示す（例: vpc, ec2）
+- description は変更内容を簡潔に説明する
+- 本文は必要な場合のみ追加し、変更の詳細な説明を記載
+- 作業ごとに適切な粒度でコミットすること
+
+## インフラを触るときの注意
+- インフラを触るときは必ずterraform planを実行して、変更内容を確認すること
+- 作業終了の前にプロジェクト全体の整合性がおかしくなっていないかを確認すること
+
+
